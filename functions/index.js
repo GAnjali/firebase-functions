@@ -12,31 +12,27 @@ exports.sendCallNotification = functions.database.ref('/videoCallInfo/{receiver}
             let receiver = context.params.receiver;
             console.log("receiver:"+receiver);
 
+            let dbUserProfileRef = firebase.database().ref("registeredUserProfileInfo").child(receiver);
+            let dbLocalContRef = dbUserProfileRef.child("LocalContacts");
+            let receiverName = receiverNumber.toString;
+            dbLocalContRef.once("value", (contactsFromDb) =>{
+                if(contactsFromDb.hasChild(caller)){
+                    receiverName = contactsFromDb.child(caller).val()
+                }
+            })
+
             admin.database().ref('registeredUserProfileInfo').child(receiver).once("value", (snapshot) => {
                 const token = snapshot.val().pushToken;
-                console.log(token);
+                console.log(token);s
                 const payload = {
                     notification: {
-                        title: "asdfghjkl",
-                        body: "you have incoming video call",
-                        color:"#607D8B",
-                        icon:"ic_notif",
-                        sound:"default",
+                        title: receiverName,
+                        body: "Incoming video call. Tap to open",
+                        sound:"Incallmanager_ringtone",
                     },
-                    message: {
-                        data: {
-                            "Nick": "Mario",
-                            "body": "great match!",
-                            "Room": "PortugalVSDenmark"
-                        }
-                    },
-                    // data: {
-                    //     title:"App notification",
-                    //     body:"You have incoming video call",
-                    //     sender: caller.toString(),
-                    //     receiver: receiver,
-                    //     priority:"high"
-                    // }
+                    data:{
+                        sender: caller.toString
+                    }
                 };
                 return admin.messaging().sendToDevice(token, payload);
             });
